@@ -197,8 +197,8 @@ pub mod pallet {
 
 			Self::deposit_event(Event::<T>::Minted {
 				asset_id,
-				owner: to.clone(),
-				total_supply: amount.clone(),
+				owner: to,
+				total_supply: amount,
 			});
 
 			Ok(())
@@ -227,8 +227,8 @@ pub mod pallet {
 			// - Emit a `Burned` event.
 			Self::deposit_event(Event::<T>::Burned {
 				asset_id,
-				owner: origin.clone(),
-				total_supply: amount.clone(),
+				owner: origin,
+				total_supply: amount,
 			});
 
 			Ok(())
@@ -256,9 +256,9 @@ pub mod pallet {
 			// - Emit a `Transferred` event.
 			Self::deposit_event(Event::<T>::Transferred {
 				asset_id,
-				from: who.clone(),
-				to: to.clone(),
-				amount: amount.clone(),
+				from: who,
+				to,
+				amount,
 			});
 
 			Ok(())

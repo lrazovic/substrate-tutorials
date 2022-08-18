@@ -179,21 +179,14 @@ pub mod pallet {
 
 				let old_supply = details.supply;
 				details.supply = details.supply.saturating_add(amount);
-				minted_amount = details.supply - old_supply;
+				minted_amount = details.supply.saturating_sub(old_supply);
 
 				Ok(())
 			})?;
 
 			Account::<T>::mutate(asset_id, to.clone(), |balance| {
-				*balance += minted_amount;
+				*balance = balance.saturating_add(minted_amount);
 			});
-
-			// TODO: Deposit a `Minted` event.
-			// Self::deposit_event(Event::<T>::Minted {
-			// 	asset_id,
-			// 	to.clone(),
-			// 	amount.clone(),
-			// });
 
 			Self::deposit_event(Event::<T>::Minted {
 				asset_id,
@@ -215,14 +208,14 @@ pub mod pallet {
 				let details = maybe_details.as_mut().ok_or(Error::<T>::UnknownAssetId)?;
 
 				let old_supply = details.supply;
+				burned_amount = old_supply.saturating_sub(amount);
 				details.supply = details.supply.saturating_sub(amount);
-				burned_amount = details.supply - old_supply;
 
 				Ok(())
 			})?;
 			// - Mutate the account balance.
 			Account::<T>::mutate(asset_id, origin.clone(), |balance| {
-				*balance -= burned_amount;
+				*balance = balance.saturating_sub(burned_amount);
 			});
 			// - Emit a `Burned` event.
 			Self::deposit_event(Event::<T>::Burned {
@@ -243,20 +236,25 @@ pub mod pallet {
 		) -> DispatchResult {
 			// TODO:
 			// - Ensure the extrinsic origin is a signed transaction.
-			let who = ensure_signed(origin)?;
+			let sender = ensure_signed(origin)?;
 			// - Mutate both account balances.
-			Account::<T>::mutate(asset_id, who.clone(), |balance| {
-				*balance -= amount;
+
+			ensure!(
+				Account::<T>::contains_key(asset_id, sender.clone()),
+				Error::<T>::UnknownAssetId
+			);
+			Account::<T>::mutate(asset_id, sender.clone(), |balance| {
+				*balance = balance.saturating_sub(amount);
 			});
 
 			Account::<T>::mutate(asset_id, to.clone(), |balance| {
-				*balance += amount;
+				*balance = balance.saturating_add(amount);
 			});
 
 			// - Emit a `Transferred` event.
 			Self::deposit_event(Event::<T>::Transferred {
 				asset_id,
-				from: who,
+				from: sender,
 				to,
 				amount,
 			});

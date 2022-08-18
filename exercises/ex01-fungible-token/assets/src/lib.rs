@@ -209,7 +209,7 @@ pub mod pallet {
 
 				let old_supply = details.supply;
 				burned_amount = old_supply.saturating_sub(amount);
-				details.supply = details.supply.saturating_sub(amount);
+				details.supply = details.supply.saturating_sub(burned_amount);
 
 				Ok(())
 			})?;
@@ -243,12 +243,15 @@ pub mod pallet {
 				Account::<T>::contains_key(asset_id, sender.clone()),
 				Error::<T>::UnknownAssetId
 			);
+			let mut new_balance = 0;
 			Account::<T>::mutate(asset_id, sender.clone(), |balance| {
-				*balance = balance.saturating_sub(amount);
+				new_balance = balance.saturating_sub(amount);
+				*balance = new_balance;
 			});
 
 			Account::<T>::mutate(asset_id, to.clone(), |balance| {
-				*balance = balance.saturating_add(amount);
+				new_balance = balance.saturating_add(amount);
+				*balance = balance.saturating_add(new_balance);
 			});
 
 			// - Emit a `Transferred` event.
